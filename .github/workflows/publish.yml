@@ -54,6 +54,25 @@ jobs:
           git tag ${{ inputs.version }} -m "Release ${{ inputs.version }}"
           git push --tags
 
+      - name: "Generate DocC Documentation"
+        working-directory: dist
+        run: |
+          # Generate DocC documentation
+          xcodebuild docbuild -scheme TapyrusWalletSwift -destination 'generic/platform=iOS' -derivedDataPath DerivedDataForDocs
+          
+          # Create docs directory if it doesn't exist
+          mkdir -p docs
+          
+          # Copy the generated .doccarchive to the docs directory
+          cp -R DerivedDataForDocs/Build/Products/Debug-iphoneos/TapyrusWallet.doccarchive docs/
+          
+      - name: "Commit DocC Documentation"
+        working-directory: dist
+        run: |
+          git add docs/TapyrusWallet.doccarchive
+          git commit -m "Update DocC documentation for release ${{ inputs.version }}" || echo "No changes to commit"
+          git push
+
       - name: "Create release"
         uses: ncipollo/release-action@v1
         with:
