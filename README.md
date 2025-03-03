@@ -34,7 +34,6 @@ TapyrusWalletSwift can be installed via Swift Package Manager in Xcode:
 8. Ensure that `TapyrusWallet` is listed
 
 
-
 ## Usage
 
 Import the library in your Swift files:
