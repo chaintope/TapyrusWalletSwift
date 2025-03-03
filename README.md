@@ -29,20 +29,11 @@ TapyrusWalletSwift can be installed via Swift Package Manager in Xcode:
 3. Enter the repository URL: `https://github.com/chaintope/TapyrusWalletSwift.git`
 4. Select the version you want to use
 5. Click **Add Package**
+6. After adding the package, go to your target's settings
+7. Navigate to **General** → **Frameworks, Libraries, and Embedded Content**
+8. Ensure that `TapyrusWallet` is listed
 
-Alternatively, you can add it directly to your `Package.swift` file:
 
-```swift
-dependencies: [
-    .package(url: "https://github.com/chaintope/TapyrusWalletSwift.git", from: "0.1.1")
-],
-targets: [
-    .target(
-        name: "YourTarget",
-        dependencies: [.product(name: "TapyrusWallet", package: "TapyrusWalletSwift")]
-    )
-]
-```
 
 ## Usage
 
