@@ -1500,7 +1500,7 @@ public enum CalcPayToContractAddressError {
     /**
      * Occur if the contract is wrong
      */
-    case ContractError(cause: String
+    case ContractError(causeDescription: String
     )
     /**
      * Occur if the color id is invalid
@@ -1524,7 +1524,7 @@ public struct FfiConverterTypeCalcPayToContractAddressError: FfiConverterRustBuf
         
         case 1: return .FailedToParsePublicKey
         case 2: return .ContractError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 3: return .InvalidColorId
 
@@ -1543,9 +1543,9 @@ public struct FfiConverterTypeCalcPayToContractAddressError: FfiConverterRustBuf
             writeInt(&buf, Int32(1))
         
         
-        case let .ContractError(cause):
+        case let .ContractError(causeDescription):
             writeInt(&buf, Int32(2))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case .InvalidColorId:
@@ -1598,7 +1598,7 @@ public enum CheckTrustLayerRefundError {
     /**
      * Occur if the esplora client fails to connect
      */
-    case EsploraClientError(cause: String
+    case EsploraClientError(causeDescription: String
     )
     /**
      * Occur if the transaction is not found in the esplora
@@ -1633,7 +1633,7 @@ public struct FfiConverterTypeCheckTrustLayerRefundError: FfiConverterRustBuffer
             txid: try FfiConverterString.read(from: &buf)
             )
         case 2: return .EsploraClientError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 3: return .UnknownTxid
         case 4: return .CannotFoundRefundTransaction(
@@ -1657,9 +1657,9 @@ public struct FfiConverterTypeCheckTrustLayerRefundError: FfiConverterRustBuffer
             FfiConverterString.write(txid, into: &buf)
             
         
-        case let .EsploraClientError(cause):
+        case let .EsploraClientError(causeDescription):
             writeInt(&buf, Int32(2))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case .UnknownTxid:
@@ -1796,7 +1796,7 @@ public enum GetTransactionError {
     /**
      * Occur if the esplora client fails to connect
      */
-    case EsploraClientError(cause: String
+    case EsploraClientError(causeDescription: String
     )
     /**
      * Occur if the transaction is not found in the esplora
@@ -1822,7 +1822,7 @@ public struct FfiConverterTypeGetTransactionError: FfiConverterRustBuffer {
             txid: try FfiConverterString.read(from: &buf)
             )
         case 2: return .EsploraClientError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 3: return .UnknownTxid
 
@@ -1842,9 +1842,9 @@ public struct FfiConverterTypeGetTransactionError: FfiConverterRustBuffer {
             FfiConverterString.write(txid, into: &buf)
             
         
-        case let .EsploraClientError(cause):
+        case let .EsploraClientError(causeDescription):
             writeInt(&buf, Int32(2))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case .UnknownTxid:
@@ -1901,7 +1901,7 @@ public enum GetTxOutByAddressError {
     /**
      * Occur if the esplora client fails to connect
      */
-    case EsploraClientError(cause: String
+    case EsploraClientError(causeDescription: String
     )
     /**
      * Occur if the transaction is not found in the esplora
@@ -1928,7 +1928,7 @@ public struct FfiConverterTypeGetTxOutByAddressError: FfiConverterRustBuffer {
             address: try FfiConverterString.read(from: &buf)
             )
         case 3: return .EsploraClientError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 4: return .UnknownTransaction
 
@@ -1952,9 +1952,9 @@ public struct FfiConverterTypeGetTxOutByAddressError: FfiConverterRustBuffer {
             FfiConverterString.write(address, into: &buf)
             
         
-        case let .EsploraClientError(cause):
+        case let .EsploraClientError(causeDescription):
             writeInt(&buf, Int32(3))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case .UnknownTransaction:
@@ -2078,12 +2078,12 @@ public enum NewError {
     /**
      * Occur if the master key file is wrong or not found
      */
-    case LoadMasterKeyError(cause: String
+    case LoadMasterKeyError(causeDescription: String
     )
     /**
      * Occur if the wallet db file is wrong or not found
      */
-    case LoadWalletDbError(cause: String
+    case LoadWalletDbError(causeDescription: String
     )
     /**
      * Occur if the genesis hash is wrong
@@ -2103,6 +2103,11 @@ public enum NewError {
      * Occur if the wallet db is not initialized
      */
     case NotInitialized
+    /**
+     * Occur if the master key is not match with persisted.
+     */
+    case MasterKeyDoesNotMatch(got: String?, keychain: String
+    )
 }
 
 
@@ -2120,10 +2125,10 @@ public struct FfiConverterTypeNewError: FfiConverterRustBuffer {
 
         
         case 1: return .LoadMasterKeyError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 2: return .LoadWalletDbError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 3: return .ParseGenesisHashError
         case 4: return .LoadedGenesisDoesNotMatch(
@@ -2135,6 +2140,10 @@ public struct FfiConverterTypeNewError: FfiConverterRustBuffer {
             got: try FfiConverterOptionTypeNetwork.read(from: &buf)
             )
         case 6: return .NotInitialized
+        case 7: return .MasterKeyDoesNotMatch(
+            got: try FfiConverterOptionString.read(from: &buf), 
+            keychain: try FfiConverterString.read(from: &buf)
+            )
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2147,14 +2156,14 @@ public struct FfiConverterTypeNewError: FfiConverterRustBuffer {
 
         
         
-        case let .LoadMasterKeyError(cause):
+        case let .LoadMasterKeyError(causeDescription):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case let .LoadWalletDbError(cause):
+        case let .LoadWalletDbError(causeDescription):
             writeInt(&buf, Int32(2))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case .ParseGenesisHashError:
@@ -2176,6 +2185,12 @@ public struct FfiConverterTypeNewError: FfiConverterRustBuffer {
         case .NotInitialized:
             writeInt(&buf, Int32(6))
         
+        
+        case let .MasterKeyDoesNotMatch(got,keychain):
+            writeInt(&buf, Int32(7))
+            FfiConverterOptionString.write(got, into: &buf)
+            FfiConverterString.write(keychain, into: &buf)
+            
         }
     }
 }
@@ -2302,7 +2317,7 @@ public enum StoreContractError {
     /**
      * Occur if the contract is wrong
      */
-    case ContractError(cause: String
+    case ContractError(causeDescription: String
     )
     /**
      * Occur if the public key is invalid
@@ -2325,7 +2340,7 @@ public struct FfiConverterTypeStoreContractError: FfiConverterRustBuffer {
 
         
         case 1: return .ContractError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 2: return .FailedToParsePublicKey
 
@@ -2340,9 +2355,9 @@ public struct FfiConverterTypeStoreContractError: FfiConverterRustBuffer {
 
         
         
-        case let .ContractError(cause):
+        case let .ContractError(causeDescription):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case .FailedToParsePublicKey:
@@ -2390,12 +2405,12 @@ public enum SyncError {
     /**
      * Occur if the esplora client fails to connect
      */
-    case EsploraClientError(cause: String
+    case EsploraClientError(causeDescription: String
     )
     /**
      * Occur if the wallet fails to update the wallet db
      */
-    case UpdateWalletError(cause: String
+    case UpdateWalletError(causeDescription: String
     )
 }
 
@@ -2414,10 +2429,10 @@ public struct FfiConverterTypeSyncError: FfiConverterRustBuffer {
 
         
         case 1: return .EsploraClientError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 2: return .UpdateWalletError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -2431,14 +2446,14 @@ public struct FfiConverterTypeSyncError: FfiConverterRustBuffer {
 
         
         
-        case let .EsploraClientError(cause):
+        case let .EsploraClientError(causeDescription):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case let .UpdateWalletError(cause):
+        case let .UpdateWalletError(causeDescription):
             writeInt(&buf, Int32(2))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         }
     }
@@ -2486,7 +2501,7 @@ public enum TransferError {
     /**
      * Occur if the esplora client fails to connect
      */
-    case EsploraClient(cause: String
+    case EsploraClient(causeDescription: String
     )
     /**
      * Occur if the address is invalid
@@ -2506,17 +2521,17 @@ public enum TransferError {
     /**
      * Occur if the amount to transfer is invalid
      */
-    case InvalidTransferAmount(cause: String
+    case InvalidTransferAmount(causeDescription: String
     )
     /**
-     * Occur if the UTXO which means TxOut is not in the wallet db because the wallet is not synced or any other reasons
+     * Occur if the UTXO which means TxOut is not in the wallet db because_description the wallet is not synced or any other reasons
      */
     case UnknownUtxo(utxo: TxOut
     )
     /**
      * Occur if the wallet fails to create a transaction
      */
-    case FailedToCreateTransaction(cause: String
+    case FailedToCreateTransaction(causeDescription: String
     )
 }
 
@@ -2536,7 +2551,7 @@ public struct FfiConverterTypeTransferError: FfiConverterRustBuffer {
         
         case 1: return .InsufficientFund
         case 2: return .EsploraClient(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 3: return .FailedToParseAddress(
             address: try FfiConverterString.read(from: &buf)
@@ -2548,13 +2563,13 @@ public struct FfiConverterTypeTransferError: FfiConverterRustBuffer {
             txid: try FfiConverterString.read(from: &buf)
             )
         case 6: return .InvalidTransferAmount(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
         case 7: return .UnknownUtxo(
             utxo: try FfiConverterTypeTxOut.read(from: &buf)
             )
         case 8: return .FailedToCreateTransaction(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -2572,9 +2587,9 @@ public struct FfiConverterTypeTransferError: FfiConverterRustBuffer {
             writeInt(&buf, Int32(1))
         
         
-        case let .EsploraClient(cause):
+        case let .EsploraClient(causeDescription):
             writeInt(&buf, Int32(2))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case let .FailedToParseAddress(address):
@@ -2592,9 +2607,9 @@ public struct FfiConverterTypeTransferError: FfiConverterRustBuffer {
             FfiConverterString.write(txid, into: &buf)
             
         
-        case let .InvalidTransferAmount(cause):
+        case let .InvalidTransferAmount(causeDescription):
             writeInt(&buf, Int32(6))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
         case let .UnknownUtxo(utxo):
@@ -2602,9 +2617,9 @@ public struct FfiConverterTypeTransferError: FfiConverterRustBuffer {
             FfiConverterTypeTxOut.write(utxo, into: &buf)
             
         
-        case let .FailedToCreateTransaction(cause):
+        case let .FailedToCreateTransaction(causeDescription):
             writeInt(&buf, Int32(8))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         }
     }
@@ -2648,7 +2663,7 @@ public enum UpdateContractError {
     /**
      * Occur if the contract is wrong
      */
-    case ContractError(cause: String
+    case ContractError(causeDescription: String
     )
 }
 
@@ -2667,7 +2682,7 @@ public struct FfiConverterTypeUpdateContractError: FfiConverterRustBuffer {
 
         
         case 1: return .ContractError(
-            cause: try FfiConverterString.read(from: &buf)
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -2681,9 +2696,9 @@ public struct FfiConverterTypeUpdateContractError: FfiConverterRustBuffer {
 
         
         
-        case let .ContractError(cause):
+        case let .ContractError(causeDescription):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(cause, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         }
     }
