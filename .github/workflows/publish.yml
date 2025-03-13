@@ -54,6 +54,15 @@ jobs:
           git tag ${{ inputs.version }} -m "Release ${{ inputs.version }}"
           git push --tags
 
+      - name: "Create release"
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/TapyrusWalletSwift/tapyrus_wallet_ffi.xcframework.zip"
+          tag: ${{ inputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Release ${{ inputs.version }}
+          prerelease: true
+
       - name: "Generate DocC Documentation"
         working-directory: dist
         run: |
@@ -72,12 +81,3 @@ jobs:
           git add docs/TapyrusWallet.doccarchive
           git commit -m "Update DocC documentation for release ${{ inputs.version }}" || echo "No changes to commit"
           git push
-
-      - name: "Create release"
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "build/TapyrusWalletSwift/tapyrus_wallet_ffi.xcframework.zip"
-          tag: ${{ inputs.version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: Release ${{ inputs.version }}
-          prerelease: true
