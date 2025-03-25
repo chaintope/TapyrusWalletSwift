@@ -27,6 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: dist
+          fetch-depth: 0
 
       - name: "Create tapyrus_wallet_ffi.xcframework"
         working-directory: build/TapyrusWalletSwift
