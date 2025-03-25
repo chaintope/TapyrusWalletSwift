@@ -24,7 +24,7 @@ let package = Package(
         .binaryTarget(
             name: "TapyrusWalletFFI",
             url: "https://github.com/chaintope/TapyrusWalletSwift/releases/download/0.1.2/tapyrus_wallet_ffi.xcframework.zip",
-            checksum: "5be36cc8456b75c664bfb5d914dbb6f7a4bf4fc7a8e9166f15747d90a34293b8"),
+            checksum: "97ae74f1dccc17d1841e5fbd52ad02c2e9d29d40f53c4c8b4512977dcd7a3968"),
         .target(
             name: "TapyrusWallet",
             dependencies: ["TapyrusWalletFFI"]),
