@@ -14,7 +14,7 @@ Key features:
 
 ### Requirements
 
-- iOS 13.0+
+- iOS 16.0+
 - Swift 5.5+
 - Connection to [esplora-tapyrus](https://github.com/chaintope/esplora-tapyrus) for blockchain data
 
