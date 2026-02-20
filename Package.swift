@@ -23,8 +23,8 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .binaryTarget(
             name: "TapyrusWalletFFI",
-            url: "https://github.com/chaintope/TapyrusWalletSwift/releases/download/0.1.4-beta.2/tapyrus_wallet_ffi.xcframework.zip",
-            checksum: "04bb120d043aef956bfce2732cb6956fa17f5b08b34566093ff7cdffdf3bff09"),
+            url: "https://github.com/chaintope/TapyrusWalletSwift/releases/download/0.1.4-beta.3/tapyrus_wallet_ffi.xcframework.zip",
+            checksum: "6874520ef64fdb828bfcf2b5eeb6eee5f645c8c14377321adfd724748009e1f2"),
         .target(
             name: "TapyrusWallet",
             dependencies: ["TapyrusWalletFFI"]),
