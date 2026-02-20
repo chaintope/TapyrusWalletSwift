@@ -400,6 +400,22 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
+    typealias FfiType = UInt16
+    typealias SwiftType = UInt16
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt16 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
     typealias FfiType = UInt32
     typealias SwiftType = UInt32
@@ -548,23 +564,27 @@ open class Config: ConfigProtocol, @unchecked Sendable {
      * - network_mode: The tapyrus network mode the wallet is connected to.
      * - network_id: The network id of the tapyrus network the wallet is connected to.
      * - genesis_hash: The genesis block hash of the tapyrus network the wallet is connected to.
-     * - esplora_url: The esplora URL to connect to.
+     * - esplora_url: The esplora URL to connect to. Either esplora_url or electrum_domain/electrum_port must be specified (but not both).
      * - esplora_user: The esplora basic authentication user to connect to.
      * - esplora_password: The esplora basic authentication password to connect to.
+     * - electrum_domain: The electrum server domain to connect to. Either esplora_url or electrum_domain/electrum_port must be specified (but not both).
+     * - electrum_port: The electrum server port to connect to.
      * - master_key_path: The master key path to load the wallet from.
      * - master_key: The master key base58 encode string.
      * - db_file_path: The wallet db file path to load the wallet from.
      */
-public convenience init(networkMode: Network, networkId: UInt32, genesisHash: String, esploraUrl: String, esploraUser: String? = nil, esploraPassword: String? = nil, masterKeyPath: String? = nil, masterKey: String? = nil, dbFilePath: String? = nil) {
+public convenience init(networkMode: Network, networkId: UInt32, genesisHash: String, esploraUrl: String? = nil, esploraUser: String? = nil, esploraPassword: String? = nil, electrumDomain: String? = nil, electrumPort: UInt16? = nil, masterKeyPath: String? = nil, masterKey: String? = nil, dbFilePath: String? = nil) {
     let pointer =
         try! rustCall() {
     uniffi_tapyrus_wallet_ffi_fn_constructor_config_new(
         FfiConverterTypeNetwork_lower(networkMode),
         FfiConverterUInt32.lower(networkId),
         FfiConverterString.lower(genesisHash),
-        FfiConverterString.lower(esploraUrl),
+        FfiConverterOptionString.lower(esploraUrl),
         FfiConverterOptionString.lower(esploraUser),
         FfiConverterOptionString.lower(esploraPassword),
+        FfiConverterOptionString.lower(electrumDomain),
+        FfiConverterOptionUInt16.lower(electrumPort),
         FfiConverterOptionString.lower(masterKeyPath),
         FfiConverterOptionString.lower(masterKey),
         FfiConverterOptionString.lower(dbFilePath),$0
@@ -1601,6 +1621,11 @@ public enum CheckTrustLayerRefundError {
     case EsploraClientError(causeDescription: String
     )
     /**
+     * Occur if the electrum client fails to connect
+     */
+    case ElectrumClientError(causeDescription: String
+    )
+    /**
      * Occur if the transaction is not found in the esplora
      */
     case UnknownTxid
@@ -1635,11 +1660,14 @@ public struct FfiConverterTypeCheckTrustLayerRefundError: FfiConverterRustBuffer
         case 2: return .EsploraClientError(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
-        case 3: return .UnknownTxid
-        case 4: return .CannotFoundRefundTransaction(
+        case 3: return .ElectrumClientError(
+            causeDescription: try FfiConverterString.read(from: &buf)
+            )
+        case 4: return .UnknownTxid
+        case 5: return .CannotFoundRefundTransaction(
             txid: try FfiConverterString.read(from: &buf)
             )
-        case 5: return .InvalidColorId
+        case 6: return .InvalidColorId
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1662,17 +1690,22 @@ public struct FfiConverterTypeCheckTrustLayerRefundError: FfiConverterRustBuffer
             FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case .UnknownTxid:
+        case let .ElectrumClientError(causeDescription):
             writeInt(&buf, Int32(3))
+            FfiConverterString.write(causeDescription, into: &buf)
+            
+        
+        case .UnknownTxid:
+            writeInt(&buf, Int32(4))
         
         
         case let .CannotFoundRefundTransaction(txid):
-            writeInt(&buf, Int32(4))
+            writeInt(&buf, Int32(5))
             FfiConverterString.write(txid, into: &buf)
             
         
         case .InvalidColorId:
-            writeInt(&buf, Int32(5))
+            writeInt(&buf, Int32(6))
         
         }
     }
@@ -1799,6 +1832,11 @@ public enum GetTransactionError {
     case EsploraClientError(causeDescription: String
     )
     /**
+     * Occur if the electrum client fails to connect
+     */
+    case ElectrumClientError(causeDescription: String
+    )
+    /**
      * Occur if the transaction is not found in the esplora
      */
     case UnknownTxid
@@ -1824,7 +1862,10 @@ public struct FfiConverterTypeGetTransactionError: FfiConverterRustBuffer {
         case 2: return .EsploraClientError(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
-        case 3: return .UnknownTxid
+        case 3: return .ElectrumClientError(
+            causeDescription: try FfiConverterString.read(from: &buf)
+            )
+        case 4: return .UnknownTxid
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1847,8 +1888,13 @@ public struct FfiConverterTypeGetTransactionError: FfiConverterRustBuffer {
             FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case .UnknownTxid:
+        case let .ElectrumClientError(causeDescription):
             writeInt(&buf, Int32(3))
+            FfiConverterString.write(causeDescription, into: &buf)
+            
+        
+        case .UnknownTxid:
+            writeInt(&buf, Int32(4))
         
         }
     }
@@ -1904,6 +1950,11 @@ public enum GetTxOutByAddressError {
     case EsploraClientError(causeDescription: String
     )
     /**
+     * Occur if the electrum client fails to connect
+     */
+    case ElectrumClientError(causeDescription: String
+    )
+    /**
      * Occur if the transaction is not found in the esplora
      */
     case UnknownTransaction
@@ -1930,7 +1981,10 @@ public struct FfiConverterTypeGetTxOutByAddressError: FfiConverterRustBuffer {
         case 3: return .EsploraClientError(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
-        case 4: return .UnknownTransaction
+        case 4: return .ElectrumClientError(
+            causeDescription: try FfiConverterString.read(from: &buf)
+            )
+        case 5: return .UnknownTransaction
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1957,8 +2011,13 @@ public struct FfiConverterTypeGetTxOutByAddressError: FfiConverterRustBuffer {
             FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case .UnknownTransaction:
+        case let .ElectrumClientError(causeDescription):
             writeInt(&buf, Int32(4))
+            FfiConverterString.write(causeDescription, into: &buf)
+            
+        
+        case .UnknownTransaction:
+            writeInt(&buf, Int32(5))
         
         }
     }
@@ -2108,6 +2167,11 @@ public enum NewError {
      */
     case MasterKeyDoesNotMatch(got: String?, keychain: String
     )
+    /**
+     * Occur if both esplora_url and electrum_domain/electrum_port are specified or neither is specified
+     */
+    case InvalidBackendConfig(causeDescription: String
+    )
 }
 
 
@@ -2143,6 +2207,9 @@ public struct FfiConverterTypeNewError: FfiConverterRustBuffer {
         case 7: return .MasterKeyDoesNotMatch(
             got: try FfiConverterOptionString.read(from: &buf), 
             keychain: try FfiConverterString.read(from: &buf)
+            )
+        case 8: return .InvalidBackendConfig(
+            causeDescription: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -2190,6 +2257,11 @@ public struct FfiConverterTypeNewError: FfiConverterRustBuffer {
             writeInt(&buf, Int32(7))
             FfiConverterOptionString.write(got, into: &buf)
             FfiConverterString.write(keychain, into: &buf)
+            
+        
+        case let .InvalidBackendConfig(causeDescription):
+            writeInt(&buf, Int32(8))
+            FfiConverterString.write(causeDescription, into: &buf)
             
         }
     }
@@ -2408,6 +2480,11 @@ public enum SyncError {
     case EsploraClientError(causeDescription: String
     )
     /**
+     * Occur if the electrum client fails to connect
+     */
+    case ElectrumClientError(causeDescription: String
+    )
+    /**
      * Occur if the wallet fails to update the wallet db
      */
     case UpdateWalletError(causeDescription: String
@@ -2431,7 +2508,10 @@ public struct FfiConverterTypeSyncError: FfiConverterRustBuffer {
         case 1: return .EsploraClientError(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
-        case 2: return .UpdateWalletError(
+        case 2: return .ElectrumClientError(
+            causeDescription: try FfiConverterString.read(from: &buf)
+            )
+        case 3: return .UpdateWalletError(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
 
@@ -2451,8 +2531,13 @@ public struct FfiConverterTypeSyncError: FfiConverterRustBuffer {
             FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case let .UpdateWalletError(causeDescription):
+        case let .ElectrumClientError(causeDescription):
             writeInt(&buf, Int32(2))
+            FfiConverterString.write(causeDescription, into: &buf)
+            
+        
+        case let .UpdateWalletError(causeDescription):
+            writeInt(&buf, Int32(3))
             FfiConverterString.write(causeDescription, into: &buf)
             
         }
@@ -2504,6 +2589,11 @@ public enum TransferError {
     case EsploraClient(causeDescription: String
     )
     /**
+     * Occur if the electrum client fails to connect
+     */
+    case ElectrumClient(causeDescription: String
+    )
+    /**
      * Occur if the address is invalid
      */
     case FailedToParseAddress(address: String
@@ -2553,22 +2643,25 @@ public struct FfiConverterTypeTransferError: FfiConverterRustBuffer {
         case 2: return .EsploraClient(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
-        case 3: return .FailedToParseAddress(
-            address: try FfiConverterString.read(from: &buf)
-            )
-        case 4: return .WrongNetworkAddress(
-            address: try FfiConverterString.read(from: &buf)
-            )
-        case 5: return .FailedToParseTxid(
-            txid: try FfiConverterString.read(from: &buf)
-            )
-        case 6: return .InvalidTransferAmount(
+        case 3: return .ElectrumClient(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
-        case 7: return .UnknownUtxo(
+        case 4: return .FailedToParseAddress(
+            address: try FfiConverterString.read(from: &buf)
+            )
+        case 5: return .WrongNetworkAddress(
+            address: try FfiConverterString.read(from: &buf)
+            )
+        case 6: return .FailedToParseTxid(
+            txid: try FfiConverterString.read(from: &buf)
+            )
+        case 7: return .InvalidTransferAmount(
+            causeDescription: try FfiConverterString.read(from: &buf)
+            )
+        case 8: return .UnknownUtxo(
             utxo: try FfiConverterTypeTxOut.read(from: &buf)
             )
-        case 8: return .FailedToCreateTransaction(
+        case 9: return .FailedToCreateTransaction(
             causeDescription: try FfiConverterString.read(from: &buf)
             )
 
@@ -2592,33 +2685,38 @@ public struct FfiConverterTypeTransferError: FfiConverterRustBuffer {
             FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case let .FailedToParseAddress(address):
+        case let .ElectrumClient(causeDescription):
             writeInt(&buf, Int32(3))
-            FfiConverterString.write(address, into: &buf)
+            FfiConverterString.write(causeDescription, into: &buf)
             
         
-        case let .WrongNetworkAddress(address):
+        case let .FailedToParseAddress(address):
             writeInt(&buf, Int32(4))
             FfiConverterString.write(address, into: &buf)
             
         
-        case let .FailedToParseTxid(txid):
+        case let .WrongNetworkAddress(address):
             writeInt(&buf, Int32(5))
+            FfiConverterString.write(address, into: &buf)
+            
+        
+        case let .FailedToParseTxid(txid):
+            writeInt(&buf, Int32(6))
             FfiConverterString.write(txid, into: &buf)
             
         
         case let .InvalidTransferAmount(causeDescription):
-            writeInt(&buf, Int32(6))
+            writeInt(&buf, Int32(7))
             FfiConverterString.write(causeDescription, into: &buf)
             
         
         case let .UnknownUtxo(utxo):
-            writeInt(&buf, Int32(7))
+            writeInt(&buf, Int32(8))
             FfiConverterTypeTxOut.write(utxo, into: &buf)
             
         
         case let .FailedToCreateTransaction(causeDescription):
-            writeInt(&buf, Int32(8))
+            writeInt(&buf, Int32(9))
             FfiConverterString.write(causeDescription, into: &buf)
             
         }
@@ -2818,6 +2916,30 @@ extension VerifySignError: Foundation.LocalizedError {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionUInt16: FfiConverterRustBuffer {
+    typealias SwiftType = UInt16?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt16.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt16.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -2980,7 +3102,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tapyrus_wallet_ffi_checksum_method_hdwallet_verify_sign() != 5050) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tapyrus_wallet_ffi_checksum_constructor_config_new() != 46068) {
+    if (uniffi_tapyrus_wallet_ffi_checksum_constructor_config_new() != 1477) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tapyrus_wallet_ffi_checksum_constructor_hdwallet_new() != 32676) {
